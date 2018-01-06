@@ -34,6 +34,7 @@ namespace Answer
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Answer is: " + JsonConvert.SerializeObject(answer));
             Console.ForegroundColor = c;
+            //Console.ReadKey();
         }
 
         private static async Task<IEnumerable<Vehicle>> GetVehicles(string datasetId)
