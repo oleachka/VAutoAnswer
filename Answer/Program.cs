@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using VAuto.Client.Models;
 using VAuto.Client.Services;
+using Kurukuru;
 
 namespace Answer
 {
@@ -20,47 +21,53 @@ namespace Answer
 
         private static async Task MainAsync()
         {
-            var datasetId = await _svc.GetDatasetIdAsync();
-            Console.WriteLine("Dataset is: " + datasetId);
+            string datasetId = null;
+            await Spinner.StartAsync("Loading Dataset", async spinner =>
+            {
+                datasetId = await _svc.GetDatasetIdAsync();
+                spinner.Succeed($"Dataset is: '{datasetId}'");
+            });
 
             var vehicles = await GetVehicles(datasetId);
             var dealers = await GetDealers(datasetId, vehicles);
-            var answerRequest = AnswerRequest.CreateFromDataset(dealers, vehicles);
-            Console.WriteLine("answer request: " + JsonConvert.SerializeObject(answerRequest, Formatting.Indented));
-            var answer = await _svc.PostAnswerAsync(datasetId, answerRequest);
-
-            var c = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Answer is: " + JsonConvert.SerializeObject(answer));
-            Console.ForegroundColor = c;
-            //Console.ReadKey();
+            await Spinner.StartAsync("Posting Answer...", async spinner =>
+            {
+                var answerRequest = AnswerRequest.CreateFromDataset(dealers, vehicles);
+                // Console.WriteLine("answer request: " + JsonConvert.SerializeObject(answerRequest, Formatting.Indented));
+                var answer = await _svc.PostAnswerAsync(datasetId, answerRequest);
+                spinner.Succeed(JsonConvert.SerializeObject(answer));
+            });
         }
 
         private static async Task<IEnumerable<Vehicle>> GetVehicles(string datasetId)
         {
-            var vehicleIds = await _svc.GetVehicleIdsAsync(datasetId);
-            var timer = Stopwatch.StartNew();
+            IEnumerable<Vehicle> vehicles = null;
+            await Spinner.StartAsync("Loading Vehicles in Parallel...", async spinner =>
+            {
 
-            // Load all vehicles in parallel. 
-            var vehicleTasks = vehicleIds.Select(vId => _svc.GetVehicleAsync(datasetId, vId));
-            var vehicles = await Task.WhenAll(vehicleTasks);
-
-            Console.WriteLine($"Loaded '{vehicles.Count()}' vehicles ({timer.Elapsed:c})");
-            timer.Stop();
+                var vehicleIds = await _svc.GetVehicleIdsAsync(datasetId);
+                var timer = Stopwatch.StartNew();
+                var vehicleTasks = vehicleIds.Select(vId => _svc.GetVehicleAsync(datasetId, vId));
+                vehicles = await Task.WhenAll(vehicleTasks);
+                timer.Stop();
+                spinner.Succeed($"Loaded '{vehicles.Count()}' vehicles ({timer.Elapsed:c})");
+            });
             return vehicles;
         }
 
         private static async Task<IEnumerable<Dealer>> GetDealers(string datasetId, IEnumerable<Vehicle> vehicles)
         {
-            var timer = Stopwatch.StartNew();
-            var dealerIds = vehicles.Select(v => v.DealerId).Distinct().ToList();
-
-            // Load all dealers in parallel
-            var dealerTasks = dealerIds.Select(dId => _svc.GetDealerAsync(datasetId, dId));
-            var dealers = await Task.WhenAll(dealerTasks);
-            timer.Stop();
-            Console.WriteLine($"Loaded '{dealers.Count()}' dealers ({timer.Elapsed:c})");
-            return dealers.OrderBy(d => d.DealerId).ToList();
+            IEnumerable<Dealer> dealers = null;
+            await Spinner.StartAsync("Loading Dealers in Parallel...", async spinner =>
+            {
+                var timer = Stopwatch.StartNew();
+                var dealerIds = vehicles.Select(v => v.DealerId).Distinct().ToList();
+                var dealerTasks = dealerIds.Select(dId => _svc.GetDealerAsync(datasetId, dId));
+                dealers = (await Task.WhenAll(dealerTasks));
+                timer.Stop();
+                spinner.Succeed($"Loaded '{dealers.Count()}' dealers ({timer.Elapsed:c})");
+            });
+            return dealers?.OrderBy(d => d.DealerId).ToList();
         }
     }
 }
