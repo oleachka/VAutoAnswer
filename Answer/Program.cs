@@ -44,7 +44,6 @@ namespace Answer
             IEnumerable<Vehicle> vehicles = null;
             await Spinner.StartAsync("Loading Vehicles in Parallel...", async spinner =>
             {
-
                 var vehicleIds = await _svc.GetVehicleIdsAsync(datasetId);
                 var timer = Stopwatch.StartNew();
                 var vehicleTasks = vehicleIds.Select(vId => _svc.GetVehicleAsync(datasetId, vId));
@@ -65,7 +64,7 @@ namespace Answer
                     .Select(v => v.DealerId)
                     .Distinct()
                     .Select(dId => _svc.GetDealerAsync(datasetId, dId));
-                    
+
                 dealers = (await Task.WhenAll(dealerTasks));
                 timer.Stop();
                 spinner.Succeed($"Loaded '{dealers.Count()}' dealers ({timer.Elapsed:c})");
