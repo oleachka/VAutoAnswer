@@ -9,11 +9,9 @@ using VAuto.Client.Services;
 
 namespace Answer
 {
-
     class Program
     {
         private static IVAutoService _svc;
-
         static void Main(string[] args)
         {
             _svc = new VAutoService();
@@ -27,7 +25,8 @@ namespace Answer
 
             var vehicles = await GetVehicles(datasetId);
             var dealers = await GetDealers(datasetId, vehicles);
-            var answerRequest = BuildAnswerRequest(dealers, vehicles);
+            var answerRequest = AnswerRequest.CreateFromDataset(dealers, vehicles);
+            Console.WriteLine("answer request: " + JsonConvert.SerializeObject(answerRequest, Formatting.Indented));
             var answer = await _svc.PostAnswerAsync(datasetId, answerRequest);
 
             var c = Console.ForegroundColor;
@@ -42,8 +41,10 @@ namespace Answer
             var vehicleIds = await _svc.GetVehicleIdsAsync(datasetId);
             var timer = Stopwatch.StartNew();
 
+            // Load all vehicles in parallel. 
             var vehicleTasks = vehicleIds.Select(vId => _svc.GetVehicleAsync(datasetId, vId));
             var vehicles = await Task.WhenAll(vehicleTasks);
+
             Console.WriteLine($"Loaded '{vehicles.Count()}' vehicles ({timer.Elapsed:c})");
             timer.Stop();
             return vehicles;
@@ -54,26 +55,12 @@ namespace Answer
             var timer = Stopwatch.StartNew();
             var dealerIds = vehicles.Select(v => v.DealerId).Distinct().ToList();
 
+            // Load all dealers in parallel
             var dealerTasks = dealerIds.Select(dId => _svc.GetDealerAsync(datasetId, dId));
             var dealers = await Task.WhenAll(dealerTasks);
             timer.Stop();
             Console.WriteLine($"Loaded '{dealers.Count()}' dealers ({timer.Elapsed:c})");
             return dealers.OrderBy(d => d.DealerId).ToList();
-        }
-
-        private static AnswerRequest BuildAnswerRequest(IEnumerable<Dealer> dealers, IEnumerable<Vehicle> vehicles)
-        {
-            foreach (var dealer in dealers)
-            {
-                dealer.Vehicles = vehicles
-                    .Where(v => v.DealerId == dealer.DealerId)
-                    .OrderBy(v => v.VehicleId)
-                    .ToList();
-            }
-
-            var answerRequest = new AnswerRequest(dealers.OrderBy(d => d.DealerId));
-            Console.WriteLine("answer request: " + JsonConvert.SerializeObject(answerRequest, Formatting.Indented));
-            return answerRequest;
         }
     }
 }
