@@ -61,8 +61,11 @@ namespace Answer
             await Spinner.StartAsync("Loading Dealers in Parallel...", async spinner =>
             {
                 var timer = Stopwatch.StartNew();
-                var dealerIds = vehicles.Select(v => v.DealerId).Distinct().ToList();
-                var dealerTasks = dealerIds.Select(dId => _svc.GetDealerAsync(datasetId, dId));
+                var dealerTasks = vehicles
+                    .Select(v => v.DealerId)
+                    .Distinct()
+                    .Select(dId => _svc.GetDealerAsync(datasetId, dId));
+                    
                 dealers = (await Task.WhenAll(dealerTasks));
                 timer.Stop();
                 spinner.Succeed($"Loaded '{dealers.Count()}' dealers ({timer.Elapsed:c})");
