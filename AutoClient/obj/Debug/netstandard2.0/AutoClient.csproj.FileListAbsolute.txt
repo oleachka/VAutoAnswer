@@ -1,0 +1,8 @@
+C:\dev\olga\VAutoAnswer\AutoClient\bin\Debug\netstandard2.0\AutoClient.deps.json
+C:\dev\olga\VAutoAnswer\AutoClient\bin\Debug\netstandard2.0\AutoClient.dll
+C:\dev\olga\VAutoAnswer\AutoClient\bin\Debug\netstandard2.0\AutoClient.pdb
+C:\dev\olga\VAutoAnswer\AutoClient\obj\Debug\netstandard2.0\AutoClient.csproj.CoreCompileInputs.cache
+C:\dev\olga\VAutoAnswer\AutoClient\obj\Debug\netstandard2.0\AutoClient.AssemblyInfoInputs.cache
+C:\dev\olga\VAutoAnswer\AutoClient\obj\Debug\netstandard2.0\AutoClient.AssemblyInfo.cs
+C:\dev\olga\VAutoAnswer\AutoClient\obj\Debug\netstandard2.0\AutoClient.dll
+C:\dev\olga\VAutoAnswer\AutoClient\obj\Debug\netstandard2.0\AutoClient.pdb
